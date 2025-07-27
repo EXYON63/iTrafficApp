@@ -41,6 +41,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ITraffic"
         tools:targetApi="31">
+        <service
+            android:name=".ForegroundService"
+            android:foregroundServiceType="location|dataSync"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true">

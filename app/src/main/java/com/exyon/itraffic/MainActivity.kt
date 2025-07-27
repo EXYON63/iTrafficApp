@@ -141,6 +141,14 @@ class MainActivity : AppCompatActivity() {
                 ), 101
             )
         }
+
+        NotificationUtils.createNotificationChannel(this)
+        val intent = Intent(this, ForegroundService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
     }
 
     private val scanCallback: ScanCallback = object : ScanCallback() {
