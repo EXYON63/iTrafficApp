@@ -1,7 +1,10 @@
 package com.exyon.itraffic
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.util.Log
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
@@ -14,8 +17,8 @@ class YoloHelper(context: Context, modelPath: String, labelPath: String) {
     private val INPUT_SIZE = 640
     private val NUM_BOXES = 25200
     private val NUM_CLASSES = 6
-    private val SCORE_THRESHOLD = 0.3f
-    private val IOU_THRESHOLD = 0.5f
+    private val SCORE_THRESHOLD = 0.2f
+    private val IOU_THRESHOLD = 0.2f
 
     companion object {
         val lastDetectedClasses = mutableListOf<String>()
@@ -38,6 +41,9 @@ class YoloHelper(context: Context, modelPath: String, labelPath: String) {
         tflite.run(inputBuffer, output)
 
         val detections = decodeOutput(output[0])
+        output.forEach {
+            Log.d("output", it.toString())
+        }
         val nmsDetections = nonMaxSuppression(detections)
 
         lastDetectedClasses.clear()
@@ -58,16 +64,22 @@ class YoloHelper(context: Context, modelPath: String, labelPath: String) {
         for (y in 0 until INPUT_SIZE) {
             for (x in 0 until INPUT_SIZE) {
                 val pixel = resized.getPixel(x, y)
-                buffer.putFloat(((pixel shr 16 and 0xFF) / 255.0f))
-                buffer.putFloat(((pixel shr 8 and 0xFF) / 255.0f))
-                buffer.putFloat((pixel and 0xFF) / 255.0f)
+                val r = (pixel shr 16 and 0xFF) / 255.0f
+                val g = (pixel shr 8 and 0xFF) / 255.0f
+                val b = (pixel and 0xFF) / 255.0f
+
+                buffer.putFloat(r)
+                buffer.putFloat(g)
+                buffer.putFloat(b)
             }
         }
+
         buffer.rewind()
         return buffer
     }
 
     private fun decodeOutput(output: Array<FloatArray>): List<Detection> {
+
         val detections = mutableListOf<Detection>()
 
         for (i in 0 until NUM_BOXES) {

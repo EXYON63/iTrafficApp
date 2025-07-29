@@ -52,13 +52,13 @@ import java.util.Objects
 import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import androidx.core.net.toUri
 
 
 class MainActivity : AppCompatActivity() {
     private var previewView: PreviewView? = null
     private lateinit var overlayView: OverlayView
     private var yoloHelper: YoloHelper? = null
-    val REQUEST_CODE_PERMISSIONS: Int = 1001
     val TAG: String = "BLE_Scan"
     lateinit var binding: ActivityMainBinding
     private lateinit var cameraExecutor: ExecutorService
@@ -66,10 +66,6 @@ class MainActivity : AppCompatActivity() {
     private var bluetoothLeScanner: BluetoothLeScanner? = null
     private var bluetoothAdapter: BluetoothAdapter? = null
     private val TARGET_DEVICE_NAME = "iTraffic"
-    private val bluetoothGatt: BluetoothGatt? = null
-
-    val HM10_SERVICE_UUID: UUID = UUID.fromString("0000FFE0-0000-1000-8000-00805F9B34FB")
-    val HM10_CHARACTERISTIC_UUID: UUID = UUID.fromString("0000FFE1-0000-1000-8000-00805F9B34FB")
     private var wifiReceiver: WifiConnectionReceiver? = null
 
     var speed: Int = 0
@@ -124,7 +120,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             if (!Settings.System.canWrite(applicationContext)) {
                 val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
-                intent.setData(Uri.parse("package:" + applicationContext.getPackageName()))
+                intent.setData(("package:" + applicationContext.packageName).toUri())
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 applicationContext.startActivity(intent)
             }
@@ -194,6 +190,7 @@ class MainActivity : AppCompatActivity() {
             override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
                 val data = characteristic.value.toString(Charsets.UTF_8)
                 speed = data.filter { it.isDigit() }.toInt()
+                Log.d("BLE", speed.toString())
             }
         })
     }
@@ -295,20 +292,28 @@ class MainActivity : AppCompatActivity() {
                 // 차량 클래스 감지 시 진동
                 Utility.getTrafficStatus()
                 if (YoloHelper.lastDetectedClasses.isNotEmpty()) {
+                    vibrateOnce()
                     if(speed >10)
                     {
-                        vibrateOnce();
-                        Utility.speak("차량 접근 중입니다.");
+                        vibrateOnce()
+                        Utility.speak("차량 접근 중입니다.")
+                        Log.d("vehicle", "차량 접근 중")
                     }
-                    else Utility.speak("차량이 정지했습니다. 조심히 건너세요.");
+                    else {
+                        Utility.speak("차량이 정지했습니다. 조심히 건너세요.")
+                        Log.d("vehicle", "차량 정지")
+                    }
                 }
-                else if(Objects.equals(Utility.appContext?.let { Utility.getCurrentWifiSSID(it) }, "iTraffic_WIFI")) {
+                if(Objects.equals(Utility.appContext?.let { Utility.getCurrentWifiSSID(it) }, "iTraffic_WIFI")) {
                     if(Utility.traffic) {
                         vibrateOnce();
-                        Utility.speak("초록불입니다. 조심히 건너세요.");
+                        Utility.speak("초록불입니다. 조심히 건너세요.")
+                        Log.d("traffic", "초록")
                     }
-                    else
-                        Utility.speak("빨간불입니다.");
+                    else {
+                        Utility.speak("빨간불입니다.")
+                        Log.d("traffic", "빨강")
+                    }
                 }
 
                 imageProxy.close()
